@@ -1,0 +1,17 @@
+/shared/constants.as;
+/shared/utils.as;
+/shared/files.as;
+
+generic/quickmenu.as;
+generic/playerclasses.as;
+generic/matchstates.as;
+generic/bots.as;
+generic/awards.as;
+
+gladiator.as;
+gladiator/spinner.as;
+gladiator/modifiers.as;
+gladiator/base_modifiers.as;
+gladiator/silly_modifiers.as;
+
+legacy/quake1.as;
