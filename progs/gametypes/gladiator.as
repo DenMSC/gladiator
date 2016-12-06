@@ -398,8 +398,6 @@ class cDARound
                 this.roundChallengers.push_back( @this.challengersQueueGetNextPlayer() );
             }
 
-            selected_spawn = false;
-
             // respawn all clients inside the playing teams
             for ( int j = 0; @team.ent( j ) != null; j++ )
             {
@@ -408,6 +406,9 @@ class cDARound
                 ent.client.chaseCam( null, false );
                 ent.client.chaseActive = true;
             }
+
+            selected_spawn = false;
+            
             for ( int j = 0; @team.ent( j ) != null; j++ )
             {
                 @ent = @team.ent( j );
