@@ -827,6 +827,7 @@ bool GT_UpdateBotStatus( Entity @ent )
 // select a spawning point for a player
 Entity @last_spawnposition;
 bool selected_spawn = false;
+Entity@[] gladiator_rooms;
 Entity @GT_SelectSpawnPoint( Entity @self )
 {
     /*if ( match.getState() != MATCH_STATE_PLAYTIME )
@@ -846,10 +847,7 @@ Entity @GT_SelectSpawnPoint( Entity @self )
         selected_spawn = true;
 
         //get random room
-        rooms = G_FindByClassname( "target_connectroom" );
-        if ( rooms.size() == 0 )
-            return null; // hmm? bad/old map
-        @room = @rooms[uint(brandom(0,rooms.size()-0.001))];
+        @room = @gladiator_rooms[uint(brandom(0,gladiator_rooms.size()-0.001))];
 
         //get first spawnpoint from room
         spawnents = room.findTargets();
@@ -1110,6 +1108,33 @@ void GT_Shutdown()
 // playing, but nothing has yet started.
 void GT_SpawnGametype()
 {
+    G_Print("Rooms debug: \n");
+    Entity@[] rooms = G_FindByClassname( "target_connectroom" );
+    G_Print("found "+rooms.size()+" rooms\n");
+    for ( uint i = 0; i < rooms.size(); i++ )
+    {
+        Entity@ ent = rooms[i];
+        G_Print("Room #"+(i+1)+" "+ent.targetname+":\n");
+        uint k = 0;
+        do {
+            Entity@[] spawnents = ent.findTargets();
+            if ( spawnents.size() == 0 )
+                break;
+            for ( uint j = 0; j < spawnents.size(); j++ )
+            {
+                @ent = @spawnents[j];
+                G_Print("spawn #"+(k+1)+" "+ent.targetname+" @ "+vec3ToString(ent.origin)+"\n");
+            }
+            k++;
+        } while ( true );
+        if ( k < 4 )
+        {
+            G_Print("WARN: invalid room\n");
+        } else {
+            gladiator_rooms.push_back(rooms[i]);
+        }
+    }
+    G_Print("Verification complete, "+gladiator_rooms.size()+" valid rooms found.\n");
 }
 
 // Important: This function is called before any entity is spawned, and
