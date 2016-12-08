@@ -1223,7 +1223,7 @@ void GT_InitGametype()
 
     // define the scoreboard layout
     G_ConfigString( CS_SCB_PLAYERTAB_LAYOUT, "%p l1 %n 112 %s 52 %i 52 %l 48 %r l1" );
-    G_ConfigString( CS_SCB_PLAYERTAB_TITLES, "_ Name Clan Score Ping R" );
+    G_ConfigString( CS_SCB_PLAYERTAB_TITLES, "\u00A0 Name Clan Score Ping R" );
 
     // add commands
     G_RegisterCommand( "gametype" );
