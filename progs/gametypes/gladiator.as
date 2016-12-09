@@ -621,7 +621,7 @@ class cDARound
             if ( @target != null && @target.client != null )
             {
                 target.client.stats.addScore( -1 );
-                G_LocalSound( target.client, CHAN_AUTO, G_SoundIndex( "sounds/gladiator/wowyourterrible" ) );
+                G_LocalSound( target.client, CHAN_AUTO, G_SoundIndex( "sounds/gladiator/ouch" ) );
             }
             return;
         }
@@ -988,7 +988,7 @@ void GT_ScoreEvent( Client @client, const String &score_event, const String &arg
         int arg2 = args.getToken( 1 ).toInt();
 
         if ( arg1 == arg2 )
-            G_Print( "VOID ");
+            G_DPrint( "VOID ");
         // target, attacker, inflictor
         daRound.playerKilled( G_GetEntity( arg1 ), attacker, G_GetEntity( arg2 ) );
     }
