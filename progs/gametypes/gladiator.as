@@ -1260,6 +1260,10 @@ void GT_InitGametype()
     endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/perrina_sucks_dicks", true ) );
     endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/420blazeitfaggot", true ) );
     endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/hashtagpuffdarcrybaby", true ) );
+    endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/callmemaybe", true ) );
+    endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/mikecabbage", true ) );
+    endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/rihanna", true ) );
+    endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/zorg", true ) );
 
     deadIcon = G_ImageIndex( "gfx/gladiator_icons/dead" );
     aliveIcon = G_ImageIndex( "gfx/gladiator_icons/alive" );
