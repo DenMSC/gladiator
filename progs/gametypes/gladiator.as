@@ -28,6 +28,8 @@ int aliveIcon;
 int[] endMatchSounds;
 const String[] WEAPON_NAMES = {"none", "^7GB", "^9MG", "^8RG", "^4GL", "^1RL", "^2PG", "^3LG", "^5EB"};
 
+Cvar gt_debug = Cvar("gt_debug", "0", 0);
+
 class cDARound
 {
     int state;
@@ -169,9 +171,7 @@ class cDARound
 
     void addLoser( Client@ client )
     {
-
-
-    G_Print("adding loser\n");
+    	G_DPrint("adding loser\n");
         this.removeChallenger( client );
         this.roundLosers.push_back(client);
     }
@@ -296,7 +296,7 @@ class cDARound
             if ( this.roundWinner.stats.score == scoreLimit.integer )
             {
                 this.roundAnnouncementPrint( S_COLOR_WHITE + this.roundWinner.name + S_COLOR_WHITE + " is a true gladiator!" );
-                G_Print("MATCHWIN " + this.roundWinner.name + "\n");
+                G_DPrint("MATCHWIN " + this.roundWinner.name + "\n");
             }
         }
 
@@ -503,7 +503,7 @@ class cDARound
                 G_AnnouncerSound( winner, soundIndex, GS_MAX_TEAMS, true, loser );
 
                 winner.stats.addScore( 1 );
-                G_Print( "ROUNDWIN " + winner.name + "\n" );
+                G_DPrint( "ROUNDWIN " + winner.name + "\n" );
                 //soundIndex = G_SoundIndex( "sounds/gladiator/urrekt" );
                 //G_AnnouncerSound( loser, soundIndex, GS_MAX_TEAMS, true, null );
                 //this.challengersQueueAddPlayer( loser );
@@ -616,7 +616,7 @@ class cDARound
 
         if ( this.state == DA_ROUNDSTATE_PREROUND )
         {
-            G_Print("PREROUND ");
+            G_DPrint("PREROUND ");
 
             if ( @target != null && @target.client != null )
             {
@@ -627,7 +627,7 @@ class cDARound
         }
         if ( this.state == DA_ROUNDSTATE_ROUND || this.state == DA_ROUNDSTATE_ROUNDFINISHED )
         {
-            G_Print("INROUND ");
+            G_DPrint("INROUND ");
             return;
         }
 
@@ -669,6 +669,12 @@ void target_connectroom(Entity@ self)
 ///*****************************************************************
 /// LOCAL FUNCTIONS
 ///*****************************************************************
+
+void G_DPrint( String& msg )
+{
+	if ( gt_debug.boolean )
+		G_Print(msg);
+}
 
 void DA_SetUpWarmup()
 {
@@ -1108,13 +1114,16 @@ void GT_Shutdown()
 // playing, but nothing has yet started.
 void GT_SpawnGametype()
 {
-    G_Print("Rooms debug: \n");
+	if ( gladiator_rooms.size() > 0 )
+		return;
+
+    G_DPrint("Rooms debug: \n");
     Entity@[] rooms = G_FindByClassname( "target_connectroom" );
-    G_Print("found "+rooms.size()+" rooms\n");
+    G_DPrint("found "+rooms.size()+" rooms\n");
     for ( uint i = 0; i < rooms.size(); i++ )
     {
         Entity@ ent = rooms[i];
-        G_Print("Room #"+(i+1)+" "+ent.targetname+":\n");
+        G_DPrint("Room #"+(i+1)+" "+ent.targetname+":\n");
         uint k = 0;
         do {
             Entity@[] spawnents = ent.findTargets();
@@ -1123,18 +1132,18 @@ void GT_SpawnGametype()
             for ( uint j = 0; j < spawnents.size(); j++ )
             {
                 @ent = @spawnents[j];
-                G_Print("spawn #"+(k+1)+" "+ent.targetname+" @ "+vec3ToString(ent.origin)+"\n");
+                G_DPrint("spawn #"+(k+1)+" "+ent.targetname+" @ "+vec3ToString(ent.origin)+"\n");
             }
             k++;
         } while ( true );
         if ( k < 4 )
         {
-            G_Print("WARN: invalid room\n");
+            G_DPrint("WARN: invalid room\n");
         } else {
             gladiator_rooms.push_back(rooms[i]);
         }
     }
-    G_Print("Verification complete, "+gladiator_rooms.size()+" valid rooms found.\n");
+    G_DPrint("Verification complete, "+gladiator_rooms.size()+" valid rooms found.\n");
 }
 
 // Important: This function is called before any entity is spawned, and
