@@ -1264,6 +1264,17 @@ void GT_InitGametype()
     endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/mikecabbage", true ) );
     endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/rihanna", true ) );
     endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/zorg", true ) );
+    endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/shazam", true ) );
+    endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/sanic", true ) );
+    endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/rlop", true ) );
+    endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/puffdarquote", true ) );
+    endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/magnets", true ) );
+    endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/howdoyoufeel", true ) );
+    endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/fuckoff", true ) );
+    endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/fluffle", true ) );
+    endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/drillbit", true ) );
+    endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/demo", true ) );
+    endMatchSounds.push_back( G_SoundIndex( "sounds/gladiator/trufflebutter", true ) );
 
     deadIcon = G_ImageIndex( "gfx/gladiator_icons/dead" );
     aliveIcon = G_ImageIndex( "gfx/gladiator_icons/alive" );
