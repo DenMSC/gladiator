@@ -171,7 +171,7 @@ class cDARound
 
     void addLoser( Client@ client )
     {
-    	G_DPrint("adding loser\n");
+        G_DPrint("adding loser\n");
         this.removeChallenger( client );
         this.roundLosers.push_back(client);
     }
@@ -296,7 +296,23 @@ class cDARound
             if ( this.roundWinner.stats.score == scoreLimit.integer )
             {
                 this.roundAnnouncementPrint( S_COLOR_WHITE + this.roundWinner.name + S_COLOR_WHITE + " is a true gladiator!" );
+                GT_Stats_GetPlayer( this.roundWinner ).stats.add("matchwins", 1);
                 G_DPrint("MATCHWIN " + this.roundWinner.name + "\n");
+
+
+                Entity @ent;
+                Team @team;
+
+                @team = @G_GetTeam( TEAM_PLAYERS );
+
+                for ( int j = 0; @team.ent( j ) != null; j++ )
+                {
+                    @ent = @team.ent( j );
+                    if ( @ent.client == @this.roundWinner )
+                        continue;
+
+                    GT_Stats_GetPlayer( ent.client ).stats.add("matchlosses", 1);
+                }
             }
         }
 
@@ -415,6 +431,7 @@ class cDARound
                 if ( this.isChallenger(ent.client) )
                 {
                     ent.client.respawn( false );
+                    GT_Stats_GetPlayer( ent.client ).stats.add("rounds", 1);
                 }
             }
 
@@ -487,13 +504,13 @@ class cDARound
             // if we didn't find a winner, it was a draw round
             if ( @winner == null )
             {
-            	int soundIndex;
+                int soundIndex;
                 this.roundAnnouncementPrint( S_COLOR_WHITE + "Wow your terrible" );
 
-				//this.challengersQueueAddPlayer( this.roundWinner );
-				//this.challengersQueueAddPlayer( this.roundChallenger );
-				soundIndex = G_SoundIndex( "sounds/gladiator/wowyourterrible" );
-				G_AnnouncerSound( null, soundIndex, GS_MAX_TEAMS, false, null );
+                //this.challengersQueueAddPlayer( this.roundWinner );
+                //this.challengersQueueAddPlayer( this.roundChallenger );
+                soundIndex = G_SoundIndex( "sounds/gladiator/wowyourterrible" );
+                G_AnnouncerSound( null, soundIndex, GS_MAX_TEAMS, false, null );
             }
             else
             {
@@ -503,6 +520,7 @@ class cDARound
                 G_AnnouncerSound( winner, soundIndex, GS_MAX_TEAMS, true, loser );
 
                 winner.stats.addScore( 1 );
+                GT_Stats_GetPlayer( winner ).stats.add("round_wins", 1);
                 G_DPrint( "ROUNDWIN " + winner.name + "\n" );
                 //soundIndex = G_SoundIndex( "sounds/gladiator/urrekt" );
                 //G_AnnouncerSound( loser, soundIndex, GS_MAX_TEAMS, true, null );
@@ -514,6 +532,10 @@ class cDARound
             for ( uint i = 0; i < this.roundLosers.size(); i++ )
             {
                 this.challengersQueueAddPlayer( this.roundLosers[i] );
+                if ( @winner == null )
+                {
+                    GT_Stats_GetPlayer( this.roundLosers[i] ).stats.add("round_draws", 1);
+                }
             }
 
             @this.roundWinner = @winner;
@@ -588,10 +610,10 @@ class cDARound
                 if ( !ent.isGhosting() )
                     count++;
 
-				// do not let the challengers be moved to specs due to inactivity
-				if ( ent.client.chaseActive ) {
-					ent.client.lastActivity = levelTime;
-				}
+                // do not let the challengers be moved to specs due to inactivity
+                if ( ent.client.chaseActive ) {
+                    ent.client.lastActivity = levelTime;
+                }
             }
 
             ThinkModifiers();
@@ -601,16 +623,25 @@ class cDARound
         }
     }
 
-    void playerKilled( Entity @target, Entity @attacker, Entity @inflictor )
+    void playerKilled( Entity @target, Entity @attacker, Entity @inflictor, int mod )
     {
-        if ( @target != null && @target.client != null && this.state > DA_ROUNDSTATE_NONE && this.state < DA_ROUNDSTATE_POSTROUND )
+        if ( @target == null || @target.client == null )
+            return;
+
+        Stats_Player@ target_player = @GT_Stats_GetPlayer( target.client );
+
+        if ( this.isInRound() )
         {
+            target_player.stats.add("deaths", 1);
+            target_player.stats.add("deathmod_"+String(mod), 1);
+            target_player.stats.add("roundpos_"+this.roundChallengers.length(), 1);
             this.addLoser( target.client );
 
             Vec3 vel = target.velocity;
             if ( vel.z < -1600 && target.health < 666 )
             {
                 G_GlobalSound( CHAN_AUTO, G_SoundIndex( "sounds/gladiator/smackdown" ) );
+                target_player.stats.add("smackdowns", 1);
             }
         }
 
@@ -618,23 +649,22 @@ class cDARound
         {
             G_DPrint("PREROUND ");
 
-            if ( @target != null && @target.client != null )
-            {
-                target.client.stats.addScore( -1 );
-                G_LocalSound( target.client, CHAN_AUTO, G_SoundIndex( "sounds/gladiator/ouch" ) );
-            }
-            return;
+            target.client.stats.addScore( -1 );
+            G_LocalSound( target.client, CHAN_AUTO, G_SoundIndex( "sounds/gladiator/ouch" ) );
+            target_player.stats.add("preround_deaths", 1);
         }
+
         if ( this.state == DA_ROUNDSTATE_ROUND || this.state == DA_ROUNDSTATE_ROUNDFINISHED )
         {
             G_DPrint("INROUND ");
-            return;
+            //return;
         }
 
-        if ( @target == null || @target.client == null )
-            return;
         if ( @attacker == null || @attacker.client == null )
             return;
+
+        Stats_Player@ attacker_player = @GT_Stats_GetPlayer( attacker.client );
+        attacker_player.stats.add("kills", 1);
 
         target.client.printMessage( "You were fragged by " + attacker.client.name + " (health: " + rint( attacker.health ) + ", armor: " + rint( attacker.client.armor ) + ")\n" );
 
@@ -651,7 +681,12 @@ class cDARound
         }
         
         // check for generic awards for the frag
-		award_playerKilled( @target, @attacker, @inflictor );
+        award_playerKilled( @target, @attacker, @inflictor );
+    }
+
+    bool isInRound()
+    {
+        return (this.state > DA_ROUNDSTATE_NONE && this.state < DA_ROUNDSTATE_POSTROUND);
     }
 }
 
@@ -672,8 +707,8 @@ void target_connectroom(Entity@ self)
 
 void G_DPrint( String& msg )
 {
-	if ( gt_debug.boolean )
-		G_Print(msg);
+    if ( gt_debug.boolean )
+        G_Print(msg);
 }
 
 void DA_SetUpWarmup()
@@ -745,8 +780,8 @@ bool GT_Command( Client @client, const String &cmdString, const String &argsStri
     }
     else if( cmdString == "cvarinfo" )
     {
-    	GENERIC_CheatVarResponse( client, cmdString, argsString, argc );
-    	return true;
+        GENERIC_CheatVarResponse( client, cmdString, argsString, argc );
+        return true;
     }
     else if ( cmdString == "callvotevalidate" )
     {
@@ -784,6 +819,11 @@ bool GT_Command( Client @client, const String &cmdString, const String &argsStri
         {
             gt_mod_mode.set(ModStringToMode(argsString.getToken( 1 )));
         }
+    }
+    else if ( cmdString == "!stats" )
+    {
+        Stats_Player@ player = @GT_Stats_GetPlayer( client );
+        G_PrintMsg( client.getEnt(), player.stats.toString() );
     }
 
     return false;
@@ -986,14 +1026,41 @@ void GT_ScoreEvent( Client @client, const String &score_event, const String &arg
 
         int arg1 = args.getToken( 0 ).toInt();
         int arg2 = args.getToken( 1 ).toInt();
+        int mod  = args.getToken( 3 ).toInt();
 
         if ( arg1 == arg2 )
             G_DPrint( "VOID ");
         // target, attacker, inflictor
-        daRound.playerKilled( G_GetEntity( arg1 ), attacker, G_GetEntity( arg2 ) );
+        daRound.playerKilled( G_GetEntity( arg1 ), attacker, G_GetEntity( arg2 ), mod );
     }
     else if ( score_event == "award" )
     {
+        if ( daRound.isInRound() )
+        {
+            Stats_Player@ player = @GT_Stats_GetPlayer( client );
+            String cleanAward = "award_" + args.removeColorTokens().tolower();
+            player.stats.add(cleanAward, 1);
+            player.stats.add("awards", 1);
+        }
+    }
+    else if ( score_event == "enterGame" )
+    {
+        if ( @client != null )
+        {
+            GT_Stats_GetPlayer( client ).load();
+        }
+    }
+    else if ( score_event == "userinfochanged" )
+    {
+        if ( @client != null )
+        {
+            Stats_Player@ player = @GT_Stats_GetPlayer( client );
+            if ( @player.stats == null )
+                player.load();
+
+            if ( client.name != player.stats["name"] )
+                player.load();
+        }
     }
 }
 
@@ -1055,7 +1122,7 @@ void GT_ThinkRules()
     if ( match.getState() >= MATCH_STATE_POSTMATCH )
         return;
 
-	GENERIC_Think();
+    GENERIC_Think();
 
     daRound.think();
 }
@@ -1114,8 +1181,10 @@ void GT_Shutdown()
 // playing, but nothing has yet started.
 void GT_SpawnGametype()
 {
-	if ( gladiator_rooms.size() > 0 )
-		return;
+    GT_Stats_Init();
+
+    if ( gladiator_rooms.size() > 0 )
+        return;
 
     G_DPrint("Rooms debug: \n");
     Entity@[] rooms = G_FindByClassname( "target_connectroom" );
@@ -1219,8 +1288,8 @@ void GT_InitGametype()
     gametype.teamOnlyMinimap = false;
     gametype.removeInactivePlayers = true;
 
-	gametype.mmCompatible = true;
-	
+    gametype.mmCompatible = true;
+    
     gametype.spawnpointRadius = 0;
 
     if ( gametype.isInstagib )
@@ -1236,23 +1305,24 @@ void GT_InitGametype()
 
     // add commands
     G_RegisterCommand( "gametype" );
+    G_RegisterCommand( "!stats" );
 
     // add callvotes
     G_RegisterCallvote( "mods", "<none|base|silly|verysilly>", "string", "Sets the type of possible modifiers" );
 
     // register gladiator media pure
-	G_SoundIndex( "sounds/gladiator/fight", true );
-	G_SoundIndex( "sounds/gladiator/score", true );
-	G_SoundIndex( "sounds/gladiator/urrekt", true );
-	G_SoundIndex( "sounds/gladiator/ready", true );
-	G_SoundIndex( "sounds/gladiator/countdown_1", true );
-	G_SoundIndex( "sounds/gladiator/countdown_2", true );
-	G_SoundIndex( "sounds/gladiator/countdown_3", true );
-	G_SoundIndex( "sounds/gladiator/let_the_games_begin", true );
-	G_SoundIndex( "sounds/gladiator/you_both_suck", true );
-	G_SoundIndex( "sounds/gladiator/oh_no", true );
-	G_SoundIndex( "sounds/gladiator/its_a_tie", true );
-	G_SoundIndex( "sounds/gladiator/the_king_is_back", true );
+    G_SoundIndex( "sounds/gladiator/fight", true );
+    G_SoundIndex( "sounds/gladiator/score", true );
+    G_SoundIndex( "sounds/gladiator/urrekt", true );
+    G_SoundIndex( "sounds/gladiator/ready", true );
+    G_SoundIndex( "sounds/gladiator/countdown_1", true );
+    G_SoundIndex( "sounds/gladiator/countdown_2", true );
+    G_SoundIndex( "sounds/gladiator/countdown_3", true );
+    G_SoundIndex( "sounds/gladiator/let_the_games_begin", true );
+    G_SoundIndex( "sounds/gladiator/you_both_suck", true );
+    G_SoundIndex( "sounds/gladiator/oh_no", true );
+    G_SoundIndex( "sounds/gladiator/its_a_tie", true );
+    G_SoundIndex( "sounds/gladiator/the_king_is_back", true );
     G_SoundIndex( "sounds/gladiator/fall_scream", true );
     G_SoundIndex( "sounds/gladiator/wowyourterrible", true );
     G_SoundIndex( "sounds/gladiator/smackdown", true );
